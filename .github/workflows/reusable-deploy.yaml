@@ -12,22 +12,24 @@ jobs:
           # 1. Get the Short SHA
             SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
             REPO_NAME="${{ github.event.repository.name }}"
+            echo "ROOT_DOMAIN=bdtripp.com" >> $GITHUB_ENV
           # 2. Logic for Prod vs Dev
             if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
               ENV_NAME="prod"
-              echo "SUBDOMAIN=bdtripp.com" >> $GITHUB_ENV
+              echo "SUBDOMAIN=${REPO_NAME}" >> $GITHUB_ENV
               echo "TARGET_HOST=${{ secrets.PROD_HOST }}" >> $GITHUB_ENV
               echo "TARGET_USER=${{ secrets.VPS_PROD_USERNAME }}" >> $GITHUB_ENV
             else
               ENV_NAME="dev"
-              echo "SUBDOMAIN=dev.bdtripp.com" >> $GITHUB_ENV
+              echo "SUBDOMAIN=${ENV_NAME}-${REPO_NAME}" >> $GITHUB_ENV
               echo "TARGET_HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
               echo "TARGET_USER=${{ secrets.VPS_DEV_USERNAME }}" >> $GITHUB_ENV
             fi
           # 3. Set derived variables
           # Note: Use the local variables just defined above
             echo "ENV_NAME=${ENV_NAME}" >> $GITHUB_ENV
-            echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+            echo "REPO_NAME=${REPO_NAME}" >> $GITHUB_ENV
+            echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> $GITHUB_ENV
             echo "TAG=${ENV_NAME}-${SHORT_SHA}" >> $GITHUB_ENV
       - name: Set Project Name and Paths
         run: |
@@ -79,7 +81,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
           # Pass the GitHub Env variables into the remote script
-          envs: ENV_NAME,SUBDOMAIN,TAG,PROJECT_NAME,REPO_NAME,BRANCH_PATH
+          envs: ENV_NAME,ROOT_DOMAIN,SUBDOMAIN,TAG,PROJECT_NAME,REPO_NAME,BRANCH_PATH
           script: |
             # This comment is here to fix indentation error
               set -e  # Stop script on first error
