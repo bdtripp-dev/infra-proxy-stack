@@ -9,28 +9,38 @@ jobs:
       - uses: actions/checkout@v4
       - name: Determine Deployment Target
         run: |
-          # 1. Get the Short SHA
+          # Get the Short SHA
             SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
             REPO_NAME="${{ github.event.repository.name }}"
             echo "ROOT_DOMAIN=bdtripp.com" >> $GITHUB_ENV
-          # 2. Logic for Prod vs Dev
-            if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-              ENV_NAME="prod"
-              echo "SUBDOMAIN=${REPO_NAME}" >> $GITHUB_ENV
-              echo "TARGET_HOST=${{ secrets.PROD_HOST }}" >> $GITHUB_ENV
-              echo "TARGET_USER=${{ secrets.VPS_PROD_USERNAME }}" >> $GITHUB_ENV
-            else
-              ENV_NAME="dev"
-              echo "SUBDOMAIN=${ENV_NAME}-${REPO_NAME}" >> $GITHUB_ENV
-              echo "TARGET_HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
-              echo "TARGET_USER=${{ secrets.VPS_DEV_USERNAME }}" >> $GITHUB_ENV
-            fi
-          # 3. Set derived variables
-          # Note: Use the local variables just defined above
-            echo "ENV_NAME=${ENV_NAME}" >> $GITHUB_ENV
-            echo "REPO_NAME=${REPO_NAME}" >> $GITHUB_ENV
-            echo "ROOT_DOMAIN=${ROOT_DOMAIN}" >> $GITHUB_ENV
-            echo "TAG=${ENV_NAME}-${SHORT_SHA}" >> $GITHUB_ENV
+          # Determine environment
+          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            ENV_NAME="prod"
+            TARGET_HOST="${{ secrets.PROD_HOST }}"
+            TARGET_USER="${{ secrets.VPS_PROD_USERNAME }}"
+            SUBDOMAIN="${REPO_NAME}"
+          else
+            ENV_NAME="dev"
+            TARGET_HOST="${{ secrets.DEV_HOST }}"
+            TARGET_USER="${{ secrets.VPS_DEV_USERNAME }}"
+            SUBDOMAIN="${ENV_NAME}-${REPO_NAME}"
+          fi
+          # Determine FQDN
+          if [[ "${REPO_NAME}" == "my-test-app1" ]]; then
+            FQDN="${ENV_NAME}.${ROOT_DOMAIN}"
+            [[ "${ENV_NAME}" == "prod" ]] && FQDN="${ROOT_DOMAIN}"
+          else
+            FQDN="${SUBDOMAIN}.${ROOT_DOMAIN}"
+          fi
+          # Export everything to GitHub env
+          {
+            echo "TAG=${ENV_NAME}-${SHORT_SHA}"
+            echo "ENV_NAME=${ENV_NAME}"
+            echo "REPO_NAME=${REPO_NAME}"
+            echo "FQDN=${FQDN}"
+            echo "TARGET_HOST=${TARGET_HOST}"
+            echo "TARGET_USER=${TARGET_USER}"
+          } >> "$GITHUB_ENV"
       - name: Set Project Name and Paths
         run: |
           echo "PROJECT_NAME=${{ env.ENV_NAME }}-${{ env.REPO_NAME }}" >> $GITHUB_ENV
@@ -81,12 +91,12 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
           # Pass the GitHub Env variables into the remote script
-          envs: ENV_NAME,ROOT_DOMAIN,SUBDOMAIN,TAG,PROJECT_NAME,REPO_NAME,BRANCH_PATH
+          envs: ENV_NAME,FQDN,TAG,PROJECT_NAME,REPO_NAME,BRANCH_PATH
           script: |
             # This comment is here to fix indentation error
               set -e  # Stop script on first error
               echo "Deploying $PROJECT_NAME to $ENV_NAME environment…"
-              echo "for $REPO_NAME using $SUBDOMAIN and $TAG"
+              echo "for $REPO_NAME using $FQDN and $TAG"
             # Pull and Up
               cd "$BRANCH_PATH"
               for i in {1..5}; do
