@@ -26,7 +26,7 @@ jobs:
             SUBDOMAIN="${ENV_NAME}-${REPO_NAME}"
           fi
           # Determine FQDN
-          if [[ "${REPO_NAME}" == "my-test-app1" ]]; then # my-test-app1 will become portfolio
+          if [[ "${REPO_NAME}" == "portfolio" ]]; then
             FQDN="${ENV_NAME}.${ROOT_DOMAIN}"
             [[ "${ENV_NAME}" == "prod" ]] && FQDN="${ROOT_DOMAIN}"
           else
@@ -46,11 +46,6 @@ jobs:
           echo "PROJECT_NAME=${{ env.ENV_NAME }}-${{ env.REPO_NAME }}" >> $GITHUB_ENV
           echo "REPO_PATH=/srv/projects/${{ env.REPO_NAME }}" >> $GITHUB_ENV
           echo "BRANCH_PATH=/srv/projects/${{ env.REPO_NAME }}/${{ env.ENV_NAME }}" >> $GITHUB_ENV
-      # - name: Debug key presence
-      #   run: |
-      #     echo "Key length: ${#SSH_PRIVATE_KEY}"
-      #   env:
-      #     SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Create directory structure via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:

@@ -44,10 +44,10 @@ jobs:
           tags: |
             # The branch + latest tag
             type=raw,value=prod-latest,enable=${{ github.ref == 'refs/heads/master' }}
-            type=raw,value=dev-latest,enable=${{ github.ref == 'refs/heads/development' }}
+            type=raw,value=dev-latest,enable=${{ github.ref == 'refs/heads/dev' }}
             # The branch + short SHA combined
             type=raw,value=prod-{{sha}},enable=${{ github.ref == 'refs/heads/master' }}
-            type=raw,value=dev-{{sha}},enable=${{ github.ref == 'refs/heads/development' }}
+            type=raw,value=dev-{{sha}},enable=${{ github.ref == 'refs/heads/dev' }}
 
       - name: Build and Push
         uses: docker/build-push-action@v5
