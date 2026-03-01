@@ -18,12 +18,12 @@ jobs:
             ENV_NAME="prod"
             TARGET_HOST="${{ secrets.PROD_HOST }}"
             TARGET_USER="${{ secrets.VPS_PROD_USERNAME }}"
-            SUBDOMAIN="${REPO_NAME}"
-          else
+            SUBDOMAIN="${REPO_NAME//-/}"
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             ENV_NAME="dev"
             TARGET_HOST="${{ secrets.DEV_HOST }}"
             TARGET_USER="${{ secrets.VPS_DEV_USERNAME }}"
-            SUBDOMAIN="${ENV_NAME}-${REPO_NAME}"
+            SUBDOMAIN="${ENV_NAME}-${REPO_NAME//-/}"
           fi
           # Determine FQDN
           if [[ "${REPO_NAME}" == "portfolio" ]]; then
