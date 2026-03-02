@@ -18,15 +18,15 @@ jobs:
             ENV_NAME="prod"
             TARGET_HOST="${{ secrets.PROD_HOST }}"
             TARGET_USER="${{ secrets.VPS_PROD_USERNAME }}"
-            SUBDOMAIN="${REPO_NAME}"
-          else
+            SUBDOMAIN="${REPO_NAME//-/}"
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             ENV_NAME="dev"
             TARGET_HOST="${{ secrets.DEV_HOST }}"
             TARGET_USER="${{ secrets.VPS_DEV_USERNAME }}"
-            SUBDOMAIN="${ENV_NAME}-${REPO_NAME}"
+            SUBDOMAIN="${ENV_NAME}-${REPO_NAME//-/}"
           fi
           # Determine FQDN
-          if [[ "${REPO_NAME}" == "my-test-app1" ]]; then
+          if [[ "${REPO_NAME}" == "portfolio" ]]; then
             FQDN="${ENV_NAME}.${ROOT_DOMAIN}"
             [[ "${ENV_NAME}" == "prod" ]] && FQDN="${ROOT_DOMAIN}"
           else
@@ -46,11 +46,6 @@ jobs:
           echo "PROJECT_NAME=${{ env.ENV_NAME }}-${{ env.REPO_NAME }}" >> $GITHUB_ENV
           echo "REPO_PATH=/srv/projects/${{ env.REPO_NAME }}" >> $GITHUB_ENV
           echo "BRANCH_PATH=/srv/projects/${{ env.REPO_NAME }}/${{ env.ENV_NAME }}" >> $GITHUB_ENV
-      # - name: Debug key presence
-      #   run: |
-      #     echo "Key length: ${#SSH_PRIVATE_KEY}"
-      #   env:
-      #     SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Create directory structure via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:

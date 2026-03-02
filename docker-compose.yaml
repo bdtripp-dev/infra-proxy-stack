@@ -3,7 +3,6 @@ services:
     image: nginxproxy/nginx-proxy:latest
     environment:
       TRUST_DOWNSTREAM_PROXY: "true"
-    container_name: nginx-proxy
     ports:
       - "80:80"
       - "443:443"
@@ -19,7 +18,6 @@ services:
       - prod_public
   watchtower:
     image: nickfedor/watchtower
-    container_name: watchtower
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -33,7 +31,6 @@ services:
       WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD: ${WATCHTOWER_SMTP_PASSWORD}
   deunhealth:
     image: qmcgaw/deunhealth
-    container_name: deunhealth
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
