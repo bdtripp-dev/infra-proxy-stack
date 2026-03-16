@@ -38,18 +38,19 @@ jobs:
           fi
           # Export everything to GitHub env
           {
+            echo "REPO_NAME=${REPO_NAME}"
             echo "TAG=${ENV_NAME}-${SHORT_SHA}"
             echo "ENV_NAME=${ENV_NAME}"
-            echo "REPO_NAME=${REPO_NAME}"
-            echo "FQDN=${FQDN}"
+            echo "BRANCH=${BRANCH}"
             echo "TARGET_HOST=${TARGET_HOST}"
             echo "TARGET_USER=${TARGET_USER}"
+            echo "FQDN=${FQDN}"
           } >> "$GITHUB_ENV"
       - name: Set Project Name and Paths
         run: |
           echo "PROJECT_NAME=${{ env.ENV_NAME }}-${{ env.REPO_NAME }}" >> $GITHUB_ENV
           echo "REPO_PATH=/srv/projects/${{ env.REPO_NAME }}" >> $GITHUB_ENV
-          echo "BRANCH_PATH=/srv/projects/${{ env.REPO_NAME }}/${{ env.ENV_NAME }}" >> $GITHUB_ENV
+          echo "ENV_PATH=/srv/projects/${{ env.REPO_NAME }}/${{ env.ENV_NAME }}" >> $GITHUB_ENV
       - name: Create directory structure via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -59,15 +60,15 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
           # Pass the GitHub Env variables into the remote script
-          envs: REPO_PATH, BRANCH_PATH, TARGET_USER
+          envs: REPO_PATH, ENV_PATH, TARGET_USER
           script: |
             set -e
             echo "Ensuring directory exists: $REPO_PATH"
             mkdir -p "$REPO_PATH"
-            echo "Ensuring directory exists: $BRANCH_PATH"
-            mkdir -p "$BRANCH_PATH"
-            chown "$TARGET_USER":"$TARGET_USER" "$BRANCH_PATH"
-            chmod 700 "$BRANCH_PATH"
+            echo "Ensuring directory exists: $ENV_PATH"
+            mkdir -p "$ENV_PATH"
+            chown "$TARGET_USER":"$TARGET_USER" "$ENV_PATH"
+            chmod 700 "$ENV_PATH"
       - name: Copy docker-compose.yml to server
         if: ${{ inputs.deploy_type == 'docker' }}
         uses: appleboy/scp-action@v0.1.7
@@ -80,7 +81,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
           source: "docker-compose.yaml"
-          target: "${{ env.BRANCH_PATH }}/"
+          target: "${{ env.ENV_PATH }}/"
           # strip_components: 0 # Places the file directly in the target folder
       - name: Deploy via Docker
         if: ${{ inputs.deploy_type == 'docker' }}
@@ -92,14 +93,14 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
           # Pass the GitHub Env variables into the remote script
-          envs: ENV_NAME,FQDN,TAG,PROJECT_NAME,REPO_NAME,BRANCH_PATH
+          envs: ENV_NAME,FQDN,TAG,PROJECT_NAME,REPO_NAME,ENV_PATH
           script: |
             # This comment is here to fix indentation error
               set -e  # Stop script on first error
               echo "Deploying $PROJECT_NAME to $ENV_NAME environment…"
               echo "for $REPO_NAME using $FQDN"
             # Pull and Up
-              cd "$BRANCH_PATH"
+              cd "$ENV_PATH"
               for i in {1..5}; do
                 echo "Attempt $i to pull:"
                 if docker compose -p ${PROJECT_NAME} pull; then
@@ -126,12 +127,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
-          envs: BRANCH_PATH,PROJECT_NAME,BRANCH
+          envs: ENV_PATH,PROJECT_NAME,BRANCH
           script: |
             set -e
             echo "Deploying WordPress project $PROJECT_NAME via git…"
 
-            cd "$BRANCH_PATH"
+            cd "$ENV_PATH"
 
             git fetch origin
             git reset --hard origin/$BRANCH
