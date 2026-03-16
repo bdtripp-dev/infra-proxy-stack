@@ -66,7 +66,7 @@ jobs:
             mkdir -p "$REPO_PATH"
             echo "Ensuring directory exists: $BRANCH_PATH"
             mkdir -p "$BRANCH_PATH"
-            chown -R "$TARGET_USER":"$TARGET_USER" "$BRANCH_PATH"
+            chown "$TARGET_USER":"$TARGET_USER" "$BRANCH_PATH"
             chmod 700 "$BRANCH_PATH"
       - name: Copy docker-compose.yml to server
         if: ${{ inputs.deploy_type == 'docker' }}
