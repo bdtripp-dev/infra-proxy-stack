@@ -101,7 +101,7 @@ jobs:
             # Pull and Up
               cd "$ENV_PATH"
               
-              if [ inputs.deploy_type == 'git' ]; then
+              if [ "$deploy_type" = "git" ]; then
                 echo "Fetching latest code..."
                 git fetch origin
                 git reset --hard origin/$BRANCH
