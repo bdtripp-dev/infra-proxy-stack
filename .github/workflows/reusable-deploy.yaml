@@ -84,7 +84,6 @@ jobs:
           target: "${{ env.ENV_PATH }}/"
           # strip_components: 0 # Places the file directly in the target folder
       - name: Deploy via Docker
-        if: ${{ inputs.deploy_type == 'docker' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ env.TARGET_HOST }}
@@ -93,7 +92,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
           # Pass the GitHub Env variables into the remote script
-          envs: ENV_NAME,ENV_PATH,FQDN,TAG,PROJECT_NAME,REPO_NAME
+          envs: ENV_NAME,ENV_PATH,FQDN,TAG,PROJECT_NAME,REPO_NAME,BRANCH
           script: |
             # This comment is here to fix indentation error
               set -e  # Stop script on first error
@@ -101,6 +100,13 @@ jobs:
               echo "for $REPO_NAME using $FQDN"
             # Pull and Up
               cd "$ENV_PATH"
+              
+              if [ inputs.deploy_type == 'git' ]; then
+                echo "Fetching latest code..."
+                git fetch origin
+                git reset --hard origin/$BRANCH
+              fi
+
               for i in {1..5}; do
                 echo "Attempt $i to pull:"
                 if docker compose -p ${PROJECT_NAME} pull; then
@@ -118,23 +124,3 @@ jobs:
             # CLEANUP: Remove old images to save disk space
               echo "Cleaning up old Docker images..."
               docker image prune -af --filter "until=72h"
-      - name: Deploy via Git
-        if: ${{ inputs.deploy_type == 'git' }}
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ env.TARGET_HOST }}
-          username: ${{ env.TARGET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          port: 65002
-          envs: ENV_NAME,ENV_PATH,BRANCH,FQDN,TAG,PROJECT_NAME
-          script: |
-            set -e
-            echo "Deploying WordPress project $PROJECT_NAME via git…"
-
-            cd "$ENV_PATH"
-
-            git fetch origin
-            git reset --hard origin/$BRANCH
-
-            docker compose -p ${PROJECT_NAME} up -d
