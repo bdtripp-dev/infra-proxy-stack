@@ -85,6 +85,8 @@ jobs:
           # strip_components: 0 # Places the file directly in the target folder
       - name: Deploy via Docker
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_TYPE: ${{ inputs.deploy_type }}
         with:
           host: ${{ env.TARGET_HOST }}
           username: ${{ env.TARGET_USER }}
@@ -92,7 +94,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
           # Pass the GitHub Env variables into the remote script
-          envs: ENV_NAME,ENV_PATH,FQDN,TAG,PROJECT_NAME,REPO_NAME,BRANCH
+          envs: ENV_NAME,ENV_PATH,FQDN,TAG,PROJECT_NAME,REPO_NAME,BRANCH,DEPLOY_TYPE
           script: |
             # This comment is here to fix indentation error
               set -e  # Stop script on first error
@@ -101,7 +103,7 @@ jobs:
             # Pull and Up
               cd "$ENV_PATH"
               
-              if [ "$deploy_type" = "git" ]; then
+              if [ "$DEPLOY_TYPE" = "git" ]; then
                 echo "Fetching latest code..."
                 git fetch origin
                 git reset --hard origin/$BRANCH
