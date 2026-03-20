@@ -93,7 +93,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
           # Pass the GitHub Env variables into the remote script
-          envs: ENV_NAME, ENV_PATH, FQDN,TAG,PROJECT_NAME,REPO_NAME
+          envs: ENV_NAME,ENV_PATH,FQDN,TAG,PROJECT_NAME,REPO_NAME
           script: |
             # This comment is here to fix indentation error
               set -e  # Stop script on first error
@@ -127,7 +127,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
-          envs: ENV_NAME, ENV_PATH, BRANCH, FQDN, PROJECT_NAME
+          envs: ENV_NAME,ENV_PATH,BRANCH,FQDN,TAG,PROJECT_NAME
           script: |
             set -e
             echo "Deploying WordPress project $PROJECT_NAME via git…"
