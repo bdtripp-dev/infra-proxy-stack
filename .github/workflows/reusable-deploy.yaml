@@ -11,11 +11,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Determine Deployment Target
         run: |
-          # Get the Short SHA
-            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-            REPO_NAME="${{ github.event.repository.name }}"
-            ROOT_DOMAIN=bdtripp.com
-          # Determine environment
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          REPO_NAME="${{ github.event.repository.name }}"
+          ROOT_DOMAIN=bdtripp.com
+
           if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
             ENV_NAME="prod"
             BRANCH="master"
@@ -29,14 +28,23 @@ jobs:
             TARGET_USER="${{ secrets.VPS_DEV_USERNAME }}"
             SUBDOMAIN="${ENV_NAME}-${REPO_NAME}"
           fi
-          # Determine FQDN
+
           if [[ "${REPO_NAME}" == "portfolio" ]]; then
-            FQDN="${ENV_NAME}.${ROOT_DOMAIN}"
-            [[ "${ENV_NAME}" == "prod" ]] && FQDN="${ROOT_DOMAIN}"
+            if [[ "${ENV_NAME}" == "prod" ]]; then
+              FQDN="${ROOT_DOMAIN}"
+            else
+              FQDN="${ENV_NAME}.${ROOT_DOMAIN}" 
+            fi
           else
             FQDN="${SUBDOMAIN}.${ROOT_DOMAIN}"
           fi
-          # Export everything to GitHub env
+
+          if [[ "${REPO_NAME}" == "portfolio" && "${ENV_NAME}" == "prod" ]]; then
+            VIRTUAL_HOSTS="${ROOT_DOMAIN},www.${ROOT_DOMAIN}"
+          else
+            VIRTUAL_HOSTS="${FQDN}"
+          fi
+
           {
             echo "REPO_NAME=${REPO_NAME}"
             echo "TAG=${ENV_NAME}-${SHORT_SHA}"
@@ -45,6 +53,7 @@ jobs:
             echo "TARGET_HOST=${TARGET_HOST}"
             echo "TARGET_USER=${TARGET_USER}"
             echo "FQDN=${FQDN}"
+            echo "VIRTUAL_HOSTS=${VIRTUAL_HOSTS}"
           } >> "$GITHUB_ENV"
       - name: Set Project Name and Paths
         run: |
@@ -94,7 +103,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           port: 65002
           # Pass the GitHub Env variables into the remote script
-          envs: ENV_NAME,ENV_PATH,FQDN,TAG,PROJECT_NAME,REPO_NAME,BRANCH,DEPLOY_TYPE
+          envs: ENV_NAME,ENV_PATH,FQDN,VIRTUAL_HOSTS,TAG,PROJECT_NAME,REPO_NAME,BRANCH,DEPLOY_TYPE
           script: |
             # This comment is here to fix indentation error
               set -e  # Stop script on first error
